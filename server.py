@@ -2,6 +2,7 @@
 import wx
 from socket import socket, AF_INET, SOCK_STREAM
 import threading
+import time
 
 class ServerFrame(wx.Frame):
     def __init__(self):
@@ -72,10 +73,28 @@ class ServerFrame(wx.Frame):
             # 启动线程
             session_thread.start()
 
+            self.show_info_and_send_client('system message', f'{user_name} is now online!',
+                                           time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()))
+
         #当self.isOn为False时，关闭服务器
         self.server_socket.close()
         self.show_text.AppendText("服务器已关闭...\n")
         print('server stop...')
+
+    
+    def show_info_and_send_client(self, data_source, data, datetime):
+        # 字符串操作
+        send_data = f'[{datetime}] {data_source} : {data}\n'
+        # 在文本框显示
+        self.show_text.AppendText(''*40 + '\n'+ send_data+ '\n')
+
+        # 发送给所有在线用户
+        for client in self.session_thread_dict.values():
+            # 开始发送？
+            if client.is_On:
+                client.client_socket.send(send_data.encode('utf-8'))
+
+
 
 
 
@@ -93,14 +112,28 @@ class SessionThread(threading.Thread):
     def run(self) -> None:
         print(f' {self.user_name} connected...')
         while self.is_On:
-            # 接收客户端消息 存储data中
-            data = self.client_socket.recv(1024).decode('utf-8')
-            # 如果客户端断开连接，data为空
-            if not data:  # 客户端断开或发送空消息
-                print(f'{self.user_name} disconnected...')
+            try:
+                # 接收客户端消息 存储data中
+                data = self.client_socket.recv(1024).decode('utf-8')
+                # 如果客户端断开连接，data为空
+
+                if not data or data == 'stop': # 客户端关闭或发送断开消息
+                    print(f'{self.user_name} disconnected...')
+                    self.is_On = False
+                
+                else:
+                    self.server_frame.show_info_and_send_client(self.user_name, data,
+                                                                time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()))
+            
+            # 客户端异常断开
+            except ConnectionResetError: 
+                print(f'{self.user_name} disconnected abruptly')
                 self.is_On = False
-                self.client_socket.close()
-                break
+                break       
+        
+        # 关闭客户端 socket
+        self.client_socket.close()
+                
 
 
 
