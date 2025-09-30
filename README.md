@@ -1,6 +1,7 @@
 # Multi-person-chat-room
 1.技术栈：Python 3  
 2.该项目使用websocket搭建在线聊天室，前端页面使用wxpython（pip install wxPython，使用Python 3.7+下载）  
+  
 3.该项目实现功能：  
   1) 启动服务器功能实现  
   2) 客户端连接服务器  
