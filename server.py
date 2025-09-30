@@ -42,6 +42,30 @@ class ServerFrame(wx.Frame):
         # 绑定事件
         self.Bind(wx.EVT_BUTTON, self.start_server, start_server_btn)
 
+        # 保存聊天记录按钮
+        self.Bind(wx.EVT_BUTTON, self.save_record, record_btn )
+
+        # ‘断开’按钮
+        self.Bind(wx.EVT_BUTTON, self.stop_server, stop_btn)
+
+
+    def stop_server(self,event):
+        print('The server is out of service')
+        self.isOn = False
+
+
+
+    def save_record(self,event):
+        # 获取文本框内容
+        record_data = self.show_text.GetValue()
+        with open('record.log','w',encoding='utf-8') as file:
+            file.write(record_data)
+        
+        
+
+
+
+
     # 事件处理函数必须在类里
     def start_server(self, event):
         self.show_text.AppendText("服务器已启动...\n")
@@ -120,6 +144,8 @@ class SessionThread(threading.Thread):
                 if not data or data == 'stop': # 客户端关闭或发送断开消息
                     print(f'{self.user_name} disconnected...')
                     self.is_On = False
+                    self.server_frame.show_info_and_send_client('Notifications:',f'{self.user_name} leave the chat room',
+                                                                time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()))
                 
                 else:
                     self.server_frame.show_info_and_send_client(self.user_name, data,
